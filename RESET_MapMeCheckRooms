@@ -1,0 +1,94 @@
+#CLASS 0
+$CLASS = "Tools|MapMe|EXE"
+
+#AL MapMe_CheckRooms {
+$roomNum=%1
+$currentRoom=$roomNum
+$exits=%2
+$verbose=@MapMe_Verbose
+$dirs="s|sw|w|nw|n|ne|e|se"
+$dirsToCheck=$dirs
+$previousRadiusRooms=""
+
+#IF (@MapMe_Verbose) {#ECHO Entering MapMe_CheckRooms: Params: Room: $roomNum: $exits}
+#VAR MapMe_RoomToCheck {$roomNum} {} VAR
+#VAR MapMe_ExitsToCheck {$exits} {} VAR
+#VAR MapMe_CheckRoom_List {$roomNum} {} VAR
+MapMe_GetUnlinkedExits
+#IF (%roomcol($currentRoom)!=255) {
+  #CALL %roomcol($currentRoom,65280)
+  #ADDI MapMe_ColoredRooms $currentRoom
+}
+//#FORALL @MapMe_CheckRoom_List {#IF (%roomcol(%i)!=65535) {#CALL %roomcol(%i,536870911)}}
+#IF (!@MapMe_NextRoom) {
+  $previousRadiusRooms=@MapMe_CheckRoom_list
+  #VAR MapMe_CheckRoom_List {} {} VAR
+  #LOOP 1,%number(@MapMe_MaxRadius) {
+    #IF (@MapMe_Verbose) {#ECHO MapMe_CheckRooms Radius Search Loop: %i}
+    #FORALL $previousRadiusRooms {
+      $dirs="s|sw|w|nw|n|ne|e|se"
+      #IF (@MapMe_Verbose) {#ECHO Sorting dirs/rooms by priority: $dirs}
+      #FORALL $dirs {#IF (!%ismember(%k,%roomexit(%j))) {#DELI $dirsToCheck %k}}
+      #FORALL $dirsToCheck {
+        $currentRoom=%roomlink(%j,%k)
+        #IF (!%ismember($currentRoom,@MapMe_CheckedRooms)) {
+          #ADDI MapMe_CheckRoom_List $currentRoom
+          #IF (%roomcol($currentRoom)!=255) {
+            #CALL %roomcol($currentRoom,65280)
+            #ADDI MapMe_ColoredRooms $currentRoom
+          }
+          #VAR MapMe_RoomToCheck {$currentRoom} {} VAR
+          #VAR MapMe_ExitsToCheck {%roomexit($currentRoom)} {} VAR
+          MapMe_GetUnlinkedExits
+          #IF (@MapMe_NextRoom) {#BREAK}
+        }
+      }
+      #IF (@MapMe_NextRoom) {#BREAK}
+    }
+    $previousRadiusRooms=@MapMe_CheckRoom_List
+    #VAR MapMe_CheckRoom_List {} {} VAR
+    #IF (@MapMe_NextRoom) {#BREAK}
+  }
+}
+//Resetting color of checked rooms
+#DELI MapMe_ColoredRooms @MapMe_NextRoom
+//#DELI MapMe_ColoredRooms @MapMe_SpecialExitRoom
+#FORALL @MapMe_ColoredRooms {#IF (%roomcol(%i)!=255) {#CALL %roomcol(%i,536870911)}}
+//#IF (%roomnum()=@MapMe_SpecialExitRoom) {#CALL %roomcol(,255)}
+#IF (%ismember(%roomname(),@ROOMS_Signposts)) {#CALL %roomcol(,255)}
+} $CLASS
+
+
+#AL MapMe_GetUnlinkedExits {
+$roomNum=@MapMe_RoomToCheck
+$exits=@MapMe_ExitsToCheck
+$verbose=@MapMe_Verbose
+#VAR MapMe_UnlinkedExits {} {} VAR
+#IF (@MapMe_Verbose) {#ECHO MapMe_GetUnlinkedExits: $roomNum: $exits}
+$dirs="s|sw|w|nw|n|ne|e|se"
+$nextDir=""
+//Remove all exits that already have an existing room linked
+#FORALL $exits {
+//#ECHO Checking exit: %i
+  #IF (%roomlink($roomNum,%i)>0) {#DELI $exits %i}
+  #IF ((%ismember(%i,"d|u")) || (!%ismember(%i,@Directions_Basic))) {#DELI $exits %i}
+}
+#IF (@MapMe_Verbose) {#ECHO MapMe_GetUnlinkedExits Exits: $exits}
+
+//Sort unlinked exits by priority: "s|sw|w|nw|n|ne|e|se"
+$sortedExits=$dirs
+#FORALL $dirs {#IF (!%ismember(%i,$exits)) {#DELI $sortedExits %i}}
+
+#ADDI MapMe_CheckedRooms $roomNum
+#VAR MapMe_UnlinkedExits {$sortedExits} {} VAR
+$nextDir=%item($sortedExits,1)
+#IF (@MapMe_Verbose) {#ECHO Unlinked Exits for Room $roomNum: $sortedExits}
+#IF ($nextDir) {
+  #VAR MapMe_NextRoom {$roomNum} {} VAR
+  #VAR MapMe_NextDir {$nextDir}
+  #IF (@MapMe_Verbose) {#ECHO Next Room|Dir: @MapMe_NextRoom|@MapMe_NextDir}
+}
+} $CLASS
+
+
+#CLASS 0

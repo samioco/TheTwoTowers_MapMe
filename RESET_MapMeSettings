@@ -1,0 +1,78 @@
+#CLASS 0
+#CALL %maplocked(1)
+$CLASS = "Tools|MapMe|Settings"
+#UNT Alarm_MapMe
+#UNT Alarm_SpecialExit
+#VAR MapMe_Mode {} {} VAR
+#VAR MapMe_RawLandExits {} {} VAR
+#VAR MapMe_RawWaterExits {} {} VAR
+#VAR MapMe_Exits {} {} VAR
+#VAR MapMe_SeenExits {} {} VAR
+#VAR MapMe_LandExits {} {} VAR
+#VAR MapMe_WaterExits {} {} VAR
+#VAR MapMe_UnlinkedExits {} {} VAR
+#VAR MapMe_RoomToCheck {} {} VAR
+#VAR MapMe_ExitsToCheck {} {} VAR
+#VAR MapMe_i {0} {} VAR
+#VAR MapMe_MaxRadius {} {} VAR
+#VAR MapMe_StartRoom {} {} VAR
+#VAR MapMe_CheckRoom_List {} {} VAR
+#VAR MapMe_CheckedRooms {} {} VAR
+#VAR MapMe_NextRoom {} {} VAR
+#VAR MapMe_NextDir {} {} VAR
+#VAR MapMe_Verbose {} {} VAR
+#VAR MapMe_SpecialExitRoom {} {} VAR
+#VAR MapMe_ColoredRooms {} {} VAR
+
+#VAR MapMe_NoMap {} {} VAR
+#ADDI MapMe_NoMap "You can't go that way!"
+#ADDI MapMe_NoMap "enters"
+#ADDI MapMe_NoMap "Someone"
+#ADDI MapMe_NoMap "The door is locked."
+#ADDI MapMe_NoMap "What?"
+#ADDI MapMe_NoMap "The boat must be in the water first!"
+#ADDI MapMe_NoMap "You cannot go that way, but perhaps you could land there?"
+#ADDI MapMe_NoMap "You cannot move the small boat that way!"
+#ADDI MapMe_NoMap "The waters are much too treacherous to navigate."
+#ADDI MapMe_NoMap "A HUGE wave comes in and pushes you back closer to shore."
+#ADDI MapMe_NoMap "The waters are much too treacherous to navigate in that direction."
+#ADDI MapMe_NoMap "The strong current prevents you from moving your boat there."
+
+
+#TR MapMe_MapStop {{@MapMe_NoMap}} {MapStop;map} $CLASS
+
+//#TR MapMe_trigger {^%w*~(%1~){| ~[(*)]}} {
+//$water=%2
+//#VAR MapMe_RawWaterExits {$water} {} VAR
+
+#TR MapMe_GlanceExits {^%w*~((*)~)(*)} {
+#VAR MapMe_RawLandExits {%1} {} VAR
+#VAR MapMe_RawWaterExits {%2} {} VAR
+MapMe_trigger_EXE
+} $CLASS
+
+#TR MapMe_LookLandExits {The only obvious exit{"s are| is"} %1.} {
+#VAR MapMe_RawLandExits {%1} {} VAR
+MapMe_trigger_EXE
+} $CLASS
+
+#TR MapMe_LookWaterExits {There is water to the %1.} {
+#VAR MapMe_RawWaterExits {%1} {} VAR
+} $CLASS
+
+#TR MapMe_Ainur {@Ainur} {MapStop} $CLASS
+
+#T- MapMe_GlanceExits
+#T- MapMe_LookLandExits
+#T- MapMe_LookWaterExits
+#T- MapMe_Ainur
+#T- MapMe_MapStop
+#T- $CLASS
+
+#MXPTRIG MakeRoom_Name {z} {
+#ECHO Renaming Roomnum %roomnum()'s RoomName to: %0
+#CALL %roomname(,%0)
+#T- MakeRoom_Name
+} Tools|MapMe
+#T- MakeRoom_Name
+#CLASS 0
