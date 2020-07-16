@@ -1,0 +1,143 @@
+#CLASS 0
+$CLASS = "Tools|MapMe|EXE"
+
+#AL MapMe_CleanupExits {
+$roomNum=%roomnum();#IF (%1) {$roomNum=%1}
+MapMe_CleanupLandExits
+MapMe_CleanupWaterExits
+MapMe_MakeSeenExits
+MapMe_MakeRoomExits $roomNum
+MapMe_CleanSpecialExits $roomNum
+MapMe_DeleteLinks
+} $CLASS
+
+#AL MapMe_CleanupLandExits {
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Raw Land Exits: @MapMe_RawLandExits}
+$rawLandExits=@MapMe_RawLandExits
+$exits=""
+#IF ($rawLandExits) {
+  $rawLandExits=%replace($rawLandExits,"and","|")
+  $rawLandExits=%replace($rawLandExits,",","|")
+  $rawLandExits=%replace($rawLandExits,"(","")
+  $rawLandExits=%replace($rawLandExits,")","")
+  $rawLandExits=%replace($rawLandExits,"[","")
+  $rawLandExits=%replace($rawLandExits,"]","")
+  $rawLandExits=%replace($rawLandExits," ")
+  #FORALL $rawLandExits {
+    #SW (%i="north") {#ADDI $exits "n"
+    } (%i="northwest") {#ADDI $exits "nw"
+    } (%i="northeast") {#ADDI $exits "ne"
+    } (%i="west") {#ADDI $exits "w"
+    } (%i="east") {#ADDI $exits "e"
+    } (%i="Southwest") {#ADDI $exits "sw"
+    } (%i="Southeast") {#ADDI $exits "se"
+    } (%i="South") {#ADDI $exits "s"
+    } (%i="h") {#ADDI $exits "nw"
+    } (%i="j") {#ADDI $exits "ne"
+    } (%i="k") {#ADDI $exits "sw"
+    } (%i="l") {#ADDI $exits "se"
+    } {#ADDI $exits %i}
+    }
+}
+#VAR MapMe_LandExits {$exits} {} VAR
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Cleaned Land Exits: @MapMe_LandExits}
+} $CLASS
+
+#AL MapMe_CleanupWaterExits {
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Raw Water Exits: @MapMe_RawWaterExits}
+$rawWaterExits=@MapMe_RawWaterExits
+$exits=""
+#IF ($rawWaterExits) {
+  $rawWaterExits=%replace($rawWaterExits,"and","|")
+  $rawWaterExits=%replace($rawWaterExits,",","|")
+  $rawWaterExits=%replace($rawWaterExits,"(","")
+  $rawWaterExits=%replace($rawWaterExits,")","")
+  $rawWaterExits=%replace($rawWaterExits,"[","")
+  $rawWaterExits=%replace($rawWaterExits,"]","")
+  $rawWaterExits=%replace($rawWaterExits," ")
+  #FORALL $rawWaterExits {
+    #SW (%i="north") {#ADDI $exits "n"
+    } (%i="northwest") {#ADDI $exits "nw"
+    } (%i="northeast") {#ADDI $exits "ne"
+    } (%i="west") {#ADDI $exits "w"
+    } (%i="east") {#ADDI $exits "e"
+    } (%i="Southwest") {#ADDI $exits "sw"
+    } (%i="Southeast") {#ADDI $exits "se"
+    } (%i="South") {#ADDI $exits "s"
+    } (%i="h") {#ADDI $exits "nw"
+    } (%i="j") {#ADDI $exits "ne"
+    } (%i="k") {#ADDI $exits "sw"
+    } (%i="l") {#ADDI $exits "se"
+    } {#ADDI $exits %i}
+    }
+}
+#VAR MapMe_WaterExits {$exits} {} VAR
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Cleaned Water Exits: @MapMe_WaterExits}
+} $CLASS
+
+#AL MapMe_MakeSeenExits {
+#VAR MapMe_SeenExits {} {} VAR
+#FORALL @MapMe_WaterExits {#ADDI MapMe_SeenExits %i}
+#FORALL @MapMe_LandExits {#ADDI MapMe_SeenExits %i}
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Seen Exits: @MapMe_SeenExits}
+} $CLASS
+
+#AL MapMe_MakeRoomExits {
+$roomNum=%roomnum();#IF (%1) {$roomNum=%1}
+$allExits=""
+#FORALL %roomexit($roomNum) {
+#SW (%i="h") {#ADDI $allExits "nw"
+} (%i="j") {#ADDI $allExits "ne"
+} (%i="k") {#ADDI $allExits "sw"
+} (%i="l") {#ADDI $allExits "se"
+} {#ADDI $allExits %i}
+}
+#VAR MapMe_RoomExits {$allExits} {} VAR
+#IF (@MapMe_Verbose) {#ECHO Room: $roomNum: RoomExits: @MapMe_RoomExits}
+} $CLASS
+
+
+#AL MapMe_CleanSpecialExits {
+$roomNum=%roomnum();#IF (%1) {$roomNum=%1}
+#IF (@MapMe_Verbose) {#ECHO Room: $roomNum: Seen Exits: @MapMe_SeenExits}
+$specialExit=""
+$roomNote=""
+$seenExits=@MapMe_SeenExits
+#FORALL $seenExits {
+  #IF (!%ismember(%i,"s|sw|w|nw|n|ne|e|se")) {
+    $specialExit=%i
+    //color special exits red
+    #CALL %roomcol(,255)
+    #ECHO Marking Room: %ansi(high,red)Special Exit: $specialExit
+    #IF ($roomNote) {$roomNote=%concat($roomNote,%CR)}
+    $roomNote=%concat($roomNote,"Special Exit: ",$specialExit)
+    #CALL %roomnote(,$roomNote)
+    #VAR MapMe_SpecialExitRoom {$roomNum} {} VAR
+    #DELI $seenExits $specialExit
+  }
+}
+#VAR MapMe_AllExits {$seenExits} {} VAR
+#IF (@MapMe_Verbose) {#ECHO Room: $roomNum: Cleaned Special Exits from SeenExits: @MapMe_SeenExits}
+} $CLASS
+
+
+#AL MapMe_DeleteLinks {
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Cleaning Bad Links from SeenExits: @MapMe_SeenExits}
+$mode=@MapMe_Mode
+//Remove all room exits that are not part of current $mode <land/water>
+#FORALL @MapMe_RoomExits {
+  #SW (($mode="land") && (!%ismember(%i,@MapMe_LandExits))) {
+    #CALL %maplocked(0)
+    #CALL %roomlink(,%i,-1)
+  } (($mode="water") && (!%ismember(%i,@MapMe_WaterExits))) {
+    #CALL %maplocked(0)
+    #CALL %roomlink(,%i,-1)
+  }
+}
+#SW ($mode="land") {#VAR MapMe_Exits {@MapMe_LandExits} {} VAR
+} ($mode="water") {#VAR MapMe_Exits {@MapMe_WaterExits} {} VAR}
+#IF (@MapMe_Verbose) {#ECHO Room: %roomnum(): Cleaned Exits: @MapMe_Exits}
+} $CLASS
+
+
+#CLASS 0
