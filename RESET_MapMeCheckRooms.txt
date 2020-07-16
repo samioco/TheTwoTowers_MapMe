@@ -1,4 +1,4 @@
-#CLASS 0
+//RESET_MapMeCheckRooms#CLASS 0#AL RESET_MapMeCheckRooms {#CLASS 0
 $CLASS = "Tools|MapMe|EXE"
 
 #AL MapMe_CheckRooms {
@@ -91,4 +91,4 @@ $nextDir=%item($sortedExits,1)
 } $CLASS
 
 
-#CLASS 0
+#CLASS 0} _MapMe#CLASS 0

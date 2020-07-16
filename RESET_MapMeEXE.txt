@@ -1,4 +1,4 @@
-#CLASS 0
+//RESET_MapMeEXE#CLASS 0#AL RESET_MapMeEXE {#CLASS 0
 $CLASS = "Tools|MapMe|EXE"
 $Settings = "Tools|MapMe|Settings"
 #AL MapOn {
@@ -166,4 +166,4 @@ BotOn MapMe
 } $Settings
 } $CLASS
 
-#CLASS 0
+#CLASS 0} _MapMe#CLASS 0

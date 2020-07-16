@@ -1,4 +1,4 @@
-#CLASS 0
+//RESET_MapMeCleanupExits#CLASS 0#AL RESET_MapMeCleanupExits {#CLASS 0
 $CLASS = "Tools|MapMe|EXE"
 
 #AL MapMe_CleanupExits {
@@ -140,4 +140,4 @@ $mode=@MapMe_Mode
 } $CLASS
 
 
-#CLASS 0
+#CLASS 0} _MapMe#CLASS 0

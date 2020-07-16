@@ -1,4 +1,4 @@
-#CLASS 0
+//RESET_MapMeSettings#CLASS 0#AL RESET_MapMeSettings {#CLASS 0
 #CALL %maplocked(1)
 $CLASS = "Tools|MapMe|Settings"
 #UNT Alarm_MapMe
@@ -54,11 +54,11 @@ MapMe_trigger_EXE
 #TR MapMe_LookLandExits {The only obvious exit{"s are| is"} %1.} {
 #VAR MapMe_RawLandExits {%1} {} VAR
 MapMe_trigger_EXE
-} $CLASS
+} $CLASS 
 
 #TR MapMe_LookWaterExits {There is water to the %1.} {
 #VAR MapMe_RawWaterExits {%1} {} VAR
-} $CLASS
+} $CLASS 
 
 #TR MapMe_Ainur {@Ainur} {MapStop} $CLASS
 
@@ -75,4 +75,4 @@ MapMe_trigger_EXE
 #T- MakeRoom_Name
 } Tools|MapMe
 #T- MakeRoom_Name
-#CLASS 0
+#CLASS 0} _MapMe#CLASS 0
