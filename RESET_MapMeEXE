@@ -1,0 +1,169 @@
+#CLASS 0
+$CLASS = "Tools|MapMe|EXE"
+$Settings = "Tools|MapMe|Settings"
+#AL MapOn {
+#CALL %maplocked(0)
+#CALL %walkmode(0)
+} $CLASS
+
+#AL MapOff {
+#CALL %maplocked(1)
+#CALL %walkmode(0)
+} $CLASS
+
+#AL MapMe {
+MapStop
+#IF (%isnumber(%1)) {#VAR MapMe_MaxRadius {%number(%1)} {} VAR}
+#IF ((%ismember("-v",%2)) || (%ismember("verbose",%2))) {#VAR MapMe_Verbose {"verbose"} {} VAR}
+#IF (%3="water") {#VAR MapMe_Mode {"water"} {} VAR} {#VAR MapMe_Mode {"land"} {} VAR}
+#ECHO MapMe Initiated...
+#ECHO MapMe Radius: @MapMe_MaxRadius
+#ECHO MapMe Verbose: @MapMe_Verbose
+#ECHO MapMe Mode: @MapMe_Mode
+map;#WAIT 500
+#CALL %maplocked(0)
+ClassOn MapMe
+#T+ MapMe_Ainur
+#T+ MapMe_MapStop
+#T+ MapMe_GlanceExits
+#T+ MapMe_LookLandExits
+#T+ MapMe_LookWaterExits
+#WAIT 500
+glance
+} $CLASS
+
+#AL MapWater {
+MapMe %1 %2 "water"
+} $CLASS
+
+#AL MapStop {
+Time_ShowTime
+#CALL %maplocked(1)
+#CALL %walkmode(0)
+#VAR MapMe_RawLandExits {} {} VAR
+#VAR MapMe_RawWaterExits {} {} VAR
+#VAR MapMe_Exits {} {} VAR
+#VAR MapMe_RoomExits {} {} VAR
+#VAR MapMe_LandExits {} {} VAR
+#VAR MapMe_WaterExits {} {} VAR
+#VAR MapMe_SeenExits {} {} VAR
+#VAR MapMe_RoomToCheck {} {} VAR
+#VAR MapMe_ExitsToCheck {} {} VAR
+#VAR MapMe_UnlinkedExits {} {} VAR
+#VAR MapMe_i {0} {} VAR
+#VAR MapMe_MaxRadius {5} {} VAR
+#VAR MapMe_StartRoom {} {} VAR
+#VAR MapMe_CheckRoom_List {} {} VAR
+#VAR MapMe_CheckedRooms {} {} VAR
+#VAR MapMe_NextRoom {} {} VAR
+#VAR MapMe_NextDir {} {} VAR
+#VAR MapMe_Verbose {} {} VAR
+#VAR MapMe_Mode {"land"} {} VAR
+#VAR MapMe_SpecialExitRoom {} {} VAR
+#T- MapMe_GlanceExits
+#T- MapMe_LookLandExits
+#T- MapMe_LookWaterExits
+#T- MakeRoom_Name
+#T- MapMe_Ainur
+#T- MapMe_MapStop
+#UNT "Alarm_MapMe"
+#ECHO MapMe Stopped!
+ClassOff MapMe
+} $CLASS
+
+#AL MapMe_trigger_EXE {
+#T- MapMe_GlanceExits
+#T- MapMe_LookLandExits
+#T- MapMe_LookWaterExits
+#ALA "Alarm_MapMe" {+.2} {
+  #IF ((%pos("HP:",%roomname())) || ((%pos(",",%roomname())) && (%pos("and",%roomname())))) {
+    MapStop
+    #ECHO MapMe Stopped. Bad Room Name: %roomname(): %roomnum()
+    #ECHO Attempting to fix room name...
+    #WAIT 1000
+    FixRoomName
+  } {MapMe_EXE %roomnum()}
+} $Settings
+} $CLASS
+
+#AL MapMe_EXE_Reset {
+$roomNum=%0
+#VAR MapMe_NextRoom {} {} VAR
+#VAR MapMe_NextDir {} {} VAR
+#VAR MapMe_RoomToCheck {} {} VAR
+#VAR MapMe_UnlinkedExits {} {} VAR
+#VAR MapMe_Flag {} {} VAR
+#VAR MapMe_i {0} {} VAR
+#VAR MapMe_StartRoom {$roomNum} {} VAR
+#VAR MapMe_CheckedRooms {} {} VAR
+#VAR MapMe_NextRoom {} {} VAR
+#VAR MapMe_NextDir {} {} VAR
+#VAR MapMe_SpecialExitRoom {} {} VAR
+#VAR MapMe_ColoredRooms {} {} VAR
+} $CLASS
+
+#AL MapMe_EXE {
+$roomNum=%roomnum()
+#IF (%0) {$roomNum=%0}
+MapMe_EXE_Reset $roomNum
+MapMe_CleanupExits $roomNum
+$exits=@MapMe_Exits
+#IF (@MapMe_Verbose) {#CR;#ECHO MapMe Mode: @MapMe_Mode}
+#IF (@MapMe_Verbose) {#ECHO MapMe_EXE Calling MapMe_CheckRooms: Room: $roomNum: $exits}
+MapMe_CheckRooms $roomNum $exits
+#WAIT 100
+#IF (@MapMe_SpecialExitRoom) {
+  #EXE {%concat("#ALA "Alarm_SpecialExit" {+.1} {#CALL %roomcol(",@MapMe_SpecialExitRoom,",255)} Tools|MapMe|Settings")}
+}
+#IF (@MapMe_NextRoom) {
+  #VAR MapMe_RawLaNDExits {} {} VAR
+  #VAR MapMe_RawWaterExits {} {} VAR
+  #IF (@MapMe_Verbose) {#ECHO Next Room|Dir: @MapMe_NextRoom|@MapMe_NextDir}
+  #T- MapMe_trigger
+  #WALK @MapMe_NextRoom
+  #CALL %roomcol(@MapMe_NextRoom,536870911)
+  #WAIT 100
+  #T+ MapMe_GlanceExits
+  #EXE {@MapMe_NextDir}
+  #ALA "Alarm_MapMe" {+2} {glance} $Settings
+} {
+  #ECHO No NextRoom Found!
+  MapStop
+  map
+}
+} $CLASS
+
+#AL MakeRoom {
+$dir=%1
+$cmd=%2
+$reverse=%3
+$roomName=%4
+$EXE = $dir
+#IF ($cmd) {$EXE = %concat($cmd,"|",$exe)}
+#IF ($reverse) {$EXE = %concat($exe,"|",$reverse)}
+//#IF ($roomName) {$EXE = %concat($exe," {",$roomName,"}")}
+$EXE = %concat("#MAKE ",~',$exe,~')
+#ECHO Executing: $EXE
+#T+ MakeRoom_Name
+#EXE {$exe;$cmd}
+#ALA "Alarm_MakeRoom_Name" {+1} {#T- MakeRoom_Name} $Settings
+} $CLASS
+
+#AL FixRoomName {
+#CALL %maplocked(0)
+#T+ MakeRoom_Name
+#EXE {glance}
+BotOn MapMe
+#ALA "Alarm_MakeRoom_Name" {+1} {#T- MakeRoom_Name} $Settings
+#ALA "Alarm_MapMe" {+2} {
+  #IF ((%pos("HP:",%roomname())) || ((%pos(",",%roomname())) && (%pos("and",%roomname())))) {
+    MapStop
+    #ECHO FixRoomName Failed. MapMe cannot continue. Roomname is bad: %roomname(): %roomnum()
+  } {
+    #ECHO FixRoomName Successful! Roomname: %roomname(): %roomnum()
+    MapMe
+  }
+} $Settings
+} $CLASS
+
+#CLASS 0
